@@ -1,0 +1,1187 @@
+<!doctype html>
+<html lang="de" class="h-full">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Aktion Weihnachtspäckli – Schichtplan</title>
+  <meta name="description" content="Moderner, einfacher Schichtplan für Aktion Weihnachtspäckli." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/config.js"></script>
+  <style>
+    /* iOS: Verhindert Auto-Zoom bei Fokus (>=16px Schrift) */
+    /* nur Form-Felder, NICHT die Aktion-Buttons */
+    input[type="text"], input[type="password"], input[type="tel"], input[type="email"],
+    select, textarea, .pw-input, .input { font-size:16px !important; }
+
+
+  </style>
+
+  <link rel="stylesheet" href="css/index.css" />
+</head>
+
+<body class="min-h-full bg-slate-50 text-slate-900">
+  <!-- Toasts -->
+  <div id="toast-root" class="toast space-y-2" aria-live="polite"></div>
+
+  <!-- Passwort-Gate -->
+  <div id="gate" class="fixed inset-0 flex items-center justify-center bg-gradient-to-b from-slate-950 via-slate-900 to-slate-800 p-6">
+    <div class="gate-card w-full max-w-md rounded-2xl">
+      <div class="p-6">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="p-2 rounded-xl bg-slate-900/10 text-slate-700" aria-hidden="true">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+          <h1 class="text-lg font-semibold">Geschützter Zugang</h1>
+        </div>
+        <p class="text-slate-600 text-sm mb-5">Bitte Passwort eingeben, um den Schichtplan zu öffnen.</p>
+
+        <form id="gate-form" class="space-y-3" autocomplete="off" novalidate>
+          <input type="text" name="username" autocomplete="username" class="sr-only" tabindex="-1" aria-hidden="true" />
+          <label class="block text-sm" for="pw">Passwort</label>
+          <div class="gate-row">
+            <div class="pw-group">
+              <input id="pw" type="password" class="pw-input" required autocomplete="current-password" />
+              <button type="button" id="pw-toggle" class="pw-toggle" aria-label="Passwort anzeigen" aria-pressed="false">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12Z"></path><circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+            </div>
+            <button type="submit" class="btn-open">Öffnen</button>
+          </div>
+          <p id="gate-err" class="hidden text-sm text-red-600">Falsches Passwort.</p>
+        </form>
+
+        <div class="gate-footer mt-6 pt-4">
+          Diese Seite wurde entwickelt von <strong>Jonathan Borer</strong> · <span class="text-slate-700">Borer-Codeworks</span>.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- App -->
+  <div id="app" class="hidden">
+    <!-- Header -->
+    <header class="sticky top-0 z-40 glass border-b border-slate-200/60">
+      <div class="max-w-6xl mx-auto px-4 py-3 sm:py-4">
+        <div class="hdr">
+          <div class="hdr-left">
+            <a href="https://www.weihnachtspaeckli.ch" target="_blank" rel="noopener">
+              <img src="assets/awp.png" alt="Aktion Weihnachtspäckli" class="awp-img" />
+            </a>
+            <div>
+              <h1 class="hdr-title">
+                <span>Aktion Weihnachtspäckli</span>
+                <span>– Schichtplan</span>
+              </h1>
+              <p class="hdr-sub">Weihnachtspäckli für Osteuropa</p>
+            </div>
+          </div>
+
+          <div class="hdr-right">
+            <a href="https://feg-kloten.ch" target="_blank" rel="noopener"><img src="assets/feg.png" alt="FEG Kloten" class="feg-img" /></a>
+            <span class="hdr-sep"></span>
+            <div class="hdr-dev">
+              <a href="https://web-developments-borer.onrender.com" target="_blank" rel="noopener"><img src="assets/borer-codeworks.png" alt="Borer-Codeworks" class="borer-img" /></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Einsatztag Auswahl -->
+    <section class="max-w-6xl mx-auto px-4 py-4" aria-label="Einsatztag wählen">
+      <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="p-4 flex flex-wrap items-center gap-3 text-sm text-slate-700">
+
+          <div id="day-switch" class="day-switch" role="tablist" aria-label="Einsatztag umschalten">
+            <button role="tab" aria-selected="true" class="btn-day is-active" data-day="2026-11-07">
+              <span class="dow">Samstag</span>
+              <span class="dmy">7. November 2026</span>
+            </button>
+            <button role="tab" aria-selected="false" class="btn-day" data-day="2026-11-14">
+              <span class="dow">Samstag</span>
+              <span class="dmy">14. November 2026</span>
+            </button>
+          </div>
+
+          <span id="loading" class="ml-auto hidden text-sm text-slate-500">lädt…</span>
+        </div>
+      </div>
+      <p id="error" class="mt-3 text-sm text-red-600 hidden" role="alert"></p>
+    </section>
+
+    <!-- Content -->
+    <main id="content" class="max-w-6xl mx-auto px-4 pb-24" aria-live="polite"></main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-200 bg-white">
+      <div class="max-w-6xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
+        <p class="text-slate-600">© <span id="year"></span> Aktion Weihnachtspäckli</p>
+        <p class="text-slate-700">Seite entwickelt von <strong>Jonathan Borer</strong> · <span class="font-medium">Borer-Codeworks</span></p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Floating action button (unten rechts) -->
+  <button id="fab" class="hidden fixed right-5 bottom-5 z-40 rounded-full px-5 py-3 text-white bg-emerald-600 hover:bg-emerald-700 shadow-lg focus:outline-none focus:ring-2 focus:ring-emerald-400">
+    Eintragen (<span id="fab-count">0</span>)
+  </button>
+
+  <!-- Booking Modal -->
+  <div id="modal" class="modal fixed inset-0 z-50 hidden" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="absolute inset-0 bg-black/40" data-close></div>
+
+    <div id="modal-card" tabindex="-1" class="modal-card relative max-w-lg mx-4 sm:mx-auto mt-16 bg-white rounded-2xl shadow-xl border flex flex-col">
+        <!-- Close (X) -->
+        <button id="modal-close" type="button" aria-label="Schliessen"
+                class="absolute top-2 right-2 sm:top-3 sm:right-3 p-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-400">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6 L6 18 M6 6 L18 18"></path>
+            </svg>
+        </button>
+
+      <!-- STEP 1: Formular -->
+      <div id="modal-step-form" class="p-6">
+        <h3 class="text-lg font-semibold">Eintragen</h3>
+        <p class="text-sm text-slate-600">Name wird gespeichert; Telefon &amp; Organisation sind optional.</p>
+
+        <div id="modal-slot-info" class="mt-3 text-sm text-slate-700"></div>
+
+        <form id="book-form" class="mt-4 space-y-3">
+          <label class="block text-sm" for="name">
+            <span class="mb-1 block">Name *</span>
+            <input id="name" class="w-full rounded-lg border px-3 py-2 input" required />
+          </label>
+          <label class="block text-sm" for="phone">
+            <span class="mb-1 block">E-Mail</span>
+            <input
+              id="phone"                     
+              name="email"                  
+              type="email"                   
+              autocomplete="email"          
+              inputmode="email"
+              autocapitalize="off"
+              spellcheck="false"
+              class="w-full rounded-lg border px-3 py-2 input"
+              required
+            />
+          </label>
+
+          
+          <label class="block text-sm" for="org">
+            <span class="mb-1 block">Organisation</span>
+            <select id="org" class="w-full rounded-lg border px-3 py-2 input" required>
+              <option value="" disabled hidden>Optionen &gt;</option>
+              <option selected>FEG-Kloten</option>
+              <option>Airport Church</option>
+              <option>Extern</option>
+            </select>
+
+          </label>
+
+          <div class="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg p-3">
+            <strong class="font-semibold">Hinweis:</strong>
+            Dein Name ist für andere Besucher:innen dieser (passwortgeschützten) Seite sichtbar.
+            Vorname + Anfangsbuchstabe genügt (z.&nbsp;B. <strong>Max&nbsp;M.</strong>).
+          </div>
+
+          <div class="flex items-center justify-between gap-2 pt-4">
+
+            <div class="flex items-center gap-2">
+                <button type="button" id="btn-more" class="px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100">
+                Weitere Termine auswählen
+                </button>
+                <button type="button" id="btn-to-confirm" class="px-4 py-2 rounded-lg text-white btn-primary">
+                Eintragen
+                </button>
+            </div>
+        </div>
+
+        </form>
+      </div>
+
+      <!-- STEP 2: Bestätigen -->
+      <div id="modal-step-confirm" class="p-6 hidden">
+        <h3 class="text-lg font-semibold">Bitte bestätigen</h3>
+        <p class="text-sm text-slate-600 mb-3">Du trägst dich verbindlich für folgende Termine ein:</p>
+        <ul id="confirm-list" class="text-sm space-y-2 mb-4"></ul>
+
+        <div class="flex items-center justify-between text-xs text-slate-600 mb-4">
+          <div id="confirm-name"></div>
+          <div id="confirm-meta"></div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2">
+          <button type="button" id="btn-back" class="px-3 py-2 rounded-lg border border-slate-300 hover:bg-slate-100">Zurück</button>
+          <button type="button" id="btn-confirm" class="px-4 py-2 rounded-lg text-white btn-primary">Verbindlich eintragen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Script -->
+  <script>
+  document.addEventListener('DOMContentLoaded', () => {
+    /* ===== Config ===== */
+    const API_BASE = (window.AWP_CONFIG?.API_BASE || "https://awp-backend-production.up.railway.app").replace(/\/$/, "");
+    const DATES = window.AWP_CONFIG?.DATES || ["2026-11-07", "2026-11-14"];
+    const FROM = DATES[0];
+    const TO   = DATES[DATES.length-1];
+    const TOKEN_KEY = 'awp_token';
+    const NAME_KEY  = 'awp_name';
+    const DEBUG = false;
+
+    /* ===== Helpers ===== */
+    const $  = (s, r=document) => r.querySelector(s);
+    const $$ = (s, r=document) => Array.from(r.querySelectorAll(s));
+    const show = el => el && el.classList.remove('hidden');
+    const hide = el => el && el.classList.add('hidden');
+    const cap = s => s.split(' ').map(w => w ? w[0].toUpperCase() + w.slice(1) : '').join(' ');
+    const fmtDateLong = ds => new Date(ds+"T00:00:00").toLocaleDateString('de-CH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    const fmtDateShort = ds => new Date(ds+"T00:00:00").toLocaleDateString('de-CH',{weekday:'short', day:'2-digit', month:'2-digit'});
+
+    
+
+    const toastRoot = $("#toast-root");
+    function toast(msg, type='success'){
+      const el = document.createElement('div');
+      el.className = type==='error'
+        ? 'px-4 py-2 rounded-xl border shadow-sm bg-red-600 text-white border-red-700'
+        : 'px-4 py-2 rounded-xl border shadow-sm bg-emerald-600 text-white border-emerald-700';
+      el.textContent = msg;
+      toastRoot.appendChild(el);
+      setTimeout(()=>{ el.style.transition='opacity .3s'; el.style.opacity='0'; setTimeout(()=>el.remove(),300); }, 2400);
+    }
+    // ---- Fokus-Zoom auf Mobilgeräten zähmen ----
+    const vpMeta = document.querySelector('meta[name="viewport"]');
+    const VP_BASE = vpMeta ? vpMeta.getAttribute('content') : 'width=device-width, initial-scale=1';
+
+    function lockZoom(){
+      if (vpMeta) vpMeta.setAttribute('content', VP_BASE + ', maximum-scale=1, user-scalable=no');
+    }
+    function unlockZoom(){
+      if (vpMeta) vpMeta.setAttribute('content', VP_BASE);
+    }
+
+    // Beim Fokussieren von Formularfeldern temporär Zoom sperren
+    document.addEventListener('focusin', (e)=>{
+      if (e.target && e.target.matches('input, select, textarea')) lockZoom();
+    });
+    document.addEventListener('focusout', (e)=>{
+      if (e.target && e.target.matches('input, select, textarea')) setTimeout(unlockZoom, 150);
+    });
+
+
+    /* ===== Token & Name Storage ===== */
+    const getToken = () => { try { return localStorage.getItem(TOKEN_KEY) || null; } catch { return null; } };
+    const setToken = (t) => { try { localStorage.setItem(TOKEN_KEY, t); } catch {} };
+    const clearToken = () => { try { localStorage.removeItem(TOKEN_KEY); } catch {} };
+    const getSavedName = () => { try { return (localStorage.getItem(NAME_KEY)||'').trim(); } catch { return ''; } };
+    const setSavedName = (n) => { try { localStorage.setItem(NAME_KEY, (n||'').trim()); } catch {} };
+    // ===== Email Storage =====
+    const EMAIL_KEY = 'awp_email';
+    const getSavedEmail = () => { try { return (localStorage.getItem(EMAIL_KEY) || '').trim().toLowerCase(); } catch { return ''; } };
+    const setSavedEmail = (e) => { try { localStorage.setItem(EMAIL_KEY, (e || '').trim().toLowerCase()); } catch {} };
+
+    // ===== Org Storage =====
+    const ORG_KEY = 'awp_org';
+    const getSavedOrg  = () => { try { return (localStorage.getItem(ORG_KEY) || '').trim(); } catch { return ''; } };
+    const setSavedOrg  = (o) => { try { localStorage.setItem(ORG_KEY, (o || '').trim()); } catch {} };
+
+
+
+
+      
+
+    const authHeaders = () => {
+      const t = getToken();
+      return t ? { 'Authorization': `Bearer ${t}` } : {};
+    };
+    async function authFetch(input, init={}){
+      const headers = { ...(init.headers || {}), ...authHeaders() };
+      const res = await fetch(input, { ...init, headers });
+      if (res.status === 401) {
+        if (DEBUG) console.warn('[authFetch] 401 für', input);
+        clearToken();
+        hide(app); show(gate);
+        errorEl.textContent = "Bitte melde dich erneut an.";
+        show(errorEl);
+        throw new Error('unauthorized');
+      }
+      return res;
+    }
+
+    /* ===== Elemente ===== */
+    const gate = $("#gate"), gateForm=$("#gate-form"), gateErr=$("#gate-err");
+    const pwInput=$("#pw"), pwToggle=$("#pw-toggle");
+    // Passwort-Auge: anzeigen/verbergen
+    if (pwToggle && pwInput) {
+      pwToggle.addEventListener('click', () => {
+        const wasPwd = pwInput.type === 'password';
+        pwInput.type = wasPwd ? 'text' : 'password';
+        pwToggle.setAttribute('aria-pressed', String(wasPwd));
+        pwToggle.setAttribute('aria-label', wasPwd ? 'Passwort verbergen' : 'Passwort anzeigen');
+        // Fokus behalten, aber Seite nicht scrollen
+        pwInput.focus({ preventScroll: true });
+      });
+    }
+
+    const app=$("#app"), year=$("#year"), loading=$("#loading"), errorEl=$("#error"), content=$("#content");
+    const fab=$("#fab"), fabCount=$("#fab-count");
+    // --- Formular-Refs & Buttons
+    const bookForm = $("#book-form");
+    const nameInput = $("#name");
+    const phoneInput = $("#phone");
+    const orgSelect  = $("#org");
+    const btnMore = $("#btn-more");
+
+    const btnToConfirm = $("#btn-to-confirm");
+
+
+
+    function cancelModal(){
+        // Modal schließen
+        $("#modal").setAttribute('aria-hidden','true');
+        hide($("#modal"));
+
+        // Auswahl zurücksetzen (wie „Abbrechen“)
+        basket.clear();
+        selectMode = false;
+
+        // UI refreshen
+        updateFab();
+        render();
+        unlockZoom();
+        }
+    
+    // Close (X) oben rechts
+    const btnClose = $("#modal-close");
+    if (btnClose){
+    btnClose.addEventListener('click', (e)=>{
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        cancelModal();
+    });
+    }
+
+    // Overlay-Klick: statt nur verstecken => vollständig abbrechen/resetten
+    $("#modal").addEventListener('click', (e)=>{
+    if (e.target.matches('[data-close]') || e.target.hasAttribute('data-close')) {
+        cancelModal();
+    }
+    });
+
+    // ESC: ebenfalls abbrechen/resetten
+    document.addEventListener('keydown', (e)=>{
+    if (e.key === 'Escape' && $("#modal").getAttribute('aria-hidden') === 'false') {
+        cancelModal();
+    }
+    });
+
+
+
+
+    // --- Prüfen, ob alle Felder gefüllt sind
+    function isFormComplete(){
+    const nameOk  = !!(nameInput && nameInput.value.trim());
+    const phoneOk = !!(phoneInput && phoneInput.value.trim());
+    const orgOk   = !!(orgSelect && orgSelect.value && orgSelect.value.trim());
+    return nameOk && phoneOk && orgOk;
+    }
+
+    // --- Buttons sperren/freigeben + leichtes Styling
+    function syncFormButtons(){
+    const ok = isFormComplete();
+    if (btnMore){
+        btnMore.disabled = !ok;
+        btnMore.classList.toggle('opacity-50', !ok);
+        btnMore.classList.toggle('pointer-events-none', !ok);
+    }
+    if (btnToConfirm){
+        btnToConfirm.disabled = !ok;
+        btnToConfirm.classList.toggle('opacity-50', !ok);
+        btnToConfirm.classList.toggle('cursor-not-allowed', !ok);
+    }
+    }
+
+    // --- Bei Eingaben sofort neu bewerten
+    ["input","change"].forEach(evt=>{
+    if (nameInput)  nameInput.addEventListener(evt, syncFormButtons);
+    if (phoneInput) phoneInput.addEventListener(evt, syncFormButtons);
+    if (orgSelect)  orgSelect.addEventListener(evt, syncFormButtons);
+    });
+
+    // --- Hilfsfokus auf erstes fehlendes Feld
+    function focusFirstMissing(){
+    if (!nameInput.value.trim()) { nameInput.focus(); return; }
+    if (!phoneInput.value.trim()){ phoneInput.focus(); return; }
+    if (!orgSelect.value.trim()) { orgSelect.focus(); return; }
+    }
+
+    // === deine bestehende render() bleibt wie zuletzt ===
+    function bookedInSameTime(date, time){
+      return currentRows.some(s => s.date === date && s.time === time && (
+        // gleiche Logik wie isMine(), aber inline (= unabhängig von render-Scope)
+        ((getSavedName() || '').trim().toLowerCase() && (s.name || '').trim().toLowerCase() === (getSavedName() || '').trim().toLowerCase()) ||
+        ((getSavedEmail() || '') && (s.phone_nr || '').trim().toLowerCase() === getSavedEmail())
+      ));
+    }
+
+
+    // --- openFirst: nach Prefill Buttons syncen
+    function openFirst(slot){
+    basket = new Set([slot.id]);
+    updateFab();
+
+    const saved = getSavedName();
+    if (nameInput)  nameInput.value  = getSavedName()  || "";
+    if (phoneInput) phoneInput.value = getSavedEmail() || "";
+    if (orgSelect)  orgSelect.value  = getSavedOrg()   || "FEG-Kloten";
+
+    syncFormButtons();
+
+
+
+    $("#modal-slot-info").innerHTML =
+        `<div class="text-sm text-slate-700">
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 mr-2">${cap(slot.task)}</span>
+        ${fmtDateLong(slot.date)} · ${slot.time}
+        </div>`;
+
+    show($("#modal")); $("#modal").setAttribute('aria-hidden','false');
+    show($("#modal-step-form")); hide($("#modal-step-confirm"));
+    $("#modal-card")?.focus({ preventScroll:true });
+
+    // <<< HIER NEU
+    syncFormButtons();
+    }
+
+    // --- „Weitere Termine auswählen“ nur wenn alles gefüllt
+    btnMore.addEventListener('click', (e)=>{
+    e.preventDefault();
+    e.stopImmediatePropagation(); // verhindert weitere Listener auf demselben Element
+    if (!isFormComplete()){
+        toast("Bitte Name, Email und Organisation ausfüllen.", "error");
+        focusFirstMissing();
+        syncFormButtons();
+        return;
+    }
+    // Werte persistieren, damit später nicht erneut abgefragt wird
+    setSavedName(nameInput.value.trim());
+    setSavedEmail(phoneInput.value.trim());
+    setSavedOrg(orgSelect.value.trim());
+
+    openTimePanels.clear();
+
+    
+    selectMode = true;
+    $("#modal").setAttribute('aria-hidden','true'); hide($("#modal"));
+    toast("Auswahlmodus aktiv – wähle weitere Felder, dann unten rechts „Eintragen“.");
+    updateFab();
+    render();
+    });
+
+    btnToConfirm.addEventListener('click', (e)=>{
+    e.preventDefault();
+    e.stopImmediatePropagation(); // verhindert weitere Listener auf demselben Element
+    if (!isFormComplete()){
+        toast("Bitte Name, Email und Organisation ausfüllen.", "error");
+        focusFirstMissing();
+        syncFormButtons();
+        return;
+    }
+    // Eingaben merken, damit Bestätigen-Dialog sie übernimmt
+    setSavedName(nameInput.value.trim());
+    setSavedEmail(phoneInput.value.trim());
+    setSavedOrg(orgSelect.value.trim());
+
+    buildConfirm();
+
+    hide($("#modal-step-form")); show($("#modal-step-confirm"));
+    });
+
+
+    // Delegierte Clicks für dynamische Inhalte
+content.addEventListener('click', (e) => {
+  // Zeitfenster/Card-Details auf/zu
+  const dt = e.target.closest('.details-toggle');
+  if (dt) {
+    const id = dt.getAttribute('aria-controls');
+    const panel = document.getElementById(id);
+    const expanded = dt.getAttribute('aria-expanded') === 'true';
+    dt.setAttribute('aria-expanded', String(!expanded));
+    if (panel) panel.hidden = expanded;
+    const chev = dt.querySelector('.chev');
+    if (chev) chev.style.transform = expanded ? 'rotate(0deg)' : 'rotate(180deg)';
+
+    // Zeitfenster-Status merken (id beginnt mit "tp-")
+    if (id && id.startsWith('tp-')) {
+      const key = dt.getAttribute('data-timekey');
+      if (key) {
+        if (expanded) openTimePanels.delete(key);
+        else openTimePanels.add(key);
+      }
+    }
+    return;
+  }
+
+  // CTA „Jetzt eintragen“ / „Eingetragen“ (vorgemerkt)
+  const choose = e.target.closest('[data-choose]');
+  if (choose) {
+    const id = Number(choose.getAttribute('data-choose') || '0');
+    if (!id) { toast("Leider gerade voll geworden.", "error"); fetchRows(); return; }
+    if (selectMode || basket.size > 0) {
+      togglePick(id); // Panel bleibt offen dank openTimePanels
+    } else {
+      const exact = currentRows.find(r => r.id === id);
+      if (exact) openFirst(exact);
+    }
+    return;
+  }
+
+  // Klick auf freien Sitzpunkt
+  const seat = e.target.closest('.seats .seat');
+  if (seat) {
+    const selectable = seat.getAttribute('data-seat') === '1';
+    if (!selectable) return;
+    const id = Number(seat.getAttribute('data-id'));
+    if (selectMode || basket.size > 0) {
+      togglePick(id); // Panel bleibt offen
+    } else {
+      const exact = currentRows.find(r => r.id === id);
+      if (exact) openFirst(exact);
+    }
+  }
+});
+
+
+year.textContent = new Date().getFullYear();
+// Bei Größenänderung neu rendern, damit der Mobil-Fallback korrekt umschaltet
+window.addEventListener('resize', () => render());
+
+    // --- Suchleiste „Mein Name …“ oben rechts dynamisch einfügen ---
+    (() => {
+    const wrapRight = document.querySelector('.hdr-right');
+    if (!wrapRight) return;
+
+    // nur einmal anlegen
+    if (document.getElementById('awp-search-name-wrap')) return;
+
+    const box = document.createElement('div');
+    box.id = 'awp-search-name-wrap';
+    box.className = 'hidden sm:flex items-center gap-2 ml-3';
+
+    box.innerHTML = `
+      <div class="name-search">
+        <input id="awp-search-name" type="text"
+          class="name-input"
+          placeholder="Mein Name oder E-Mail…" autocomplete="name email">
+        <button id="awp-search-clear" class="name-clear" title="Eingabe löschen" aria-label="Eingabe löschen">✕</button>
+      </div>
+    `;
+
+
+
+    wrapRight.appendChild(box);
+    const inp = document.getElementById('awp-search-name');
+    const clr = document.getElementById('awp-search-clear');
+
+    // Vorbelegen: Name bevorzugt, sonst E-Mail
+    const savedName  = getSavedName();
+    const savedEmail = getSavedEmail();
+    if (savedName) {
+      inp.value = savedName;
+    } else if (savedEmail) {
+      inp.value = savedEmail;
+    }
+
+    // Live speichern & Render aktualisieren
+    inp.addEventListener('input', () => {
+      const v = (inp.value || '').trim();
+      if (v.includes('@')) setSavedEmail(v.toLowerCase());
+      else setSavedName(v);
+      render();
+    });
+
+    // X: löschen
+    clr.addEventListener('click', () => {
+      setSavedName('');
+      setSavedEmail('');
+      inp.value = '';
+      inp.focus();
+      render();
+    });
+
+    box.classList.remove('hidden');
+    })();
+
+
+
+    /* ===== Login (mit Backoff) ===== */
+    function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
+    async function loginWithPassword(pw){
+      const body = new URLSearchParams(); body.set("password", pw);
+      for (let attempt=1; attempt<=3; attempt++){
+        try{
+          const res = await fetch(`${API_BASE}/auth/login`, {
+            method:'POST',
+            headers:{ 'Content-Type':'application/x-www-form-urlencoded' },
+            body: body.toString()
+          });
+          if (res.ok){
+            const data = await res.json();
+            if (!data?.token){ toast("Antwort ohne Token.", "error"); return {ok:false}; }
+            setToken(data.token); hide(gate); show(app); fetchRows(); return {ok:true};
+          }
+          if (res.status === 401){ return {ok:false, reason:'wrong_pw'}; }
+          if ([502,503,504].includes(res.status)){
+            if (attempt < 3){
+              gateErr.textContent = "Server startet gerade neu… versuche es gleich nochmals.";
+              gateErr.classList.remove('hidden');
+              await sleep(attempt * 1200); continue;
+            }
+            toast(`Server nicht erreichbar (${res.status}).`, "error");
+            return {ok:false, reason:'server'};
+          }
+          toast(`Anmeldung fehlgeschlagen (${res.status}).`, "error");
+          return {ok:false, reason:'other'};
+        }catch{
+          if (attempt < 3){ await sleep(attempt * 1000); continue; }
+          toast("Netzwerkfehler bei der Anmeldung.", "error");
+          return {ok:false, reason:'network'};
+        }
+      }
+      return {ok:false};
+    }
+    if (gateForm){
+      gateForm.addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        gateErr.classList.add('hidden');
+        const {ok, reason} = await loginWithPassword(pwInput.value.trim());
+        if (!ok){
+          if (reason === 'wrong_pw'){
+            gateErr.textContent = "Falsches Passwort.";
+            gateErr.classList.remove('hidden');
+          }
+          pwInput.focus();
+        }
+      });
+    }
+    if (getToken()){ hide(gate); show(app); fetchRows().catch(()=>{}); }
+
+    /* ===== Auswahl / Render ===== */
+let currentRows = [];
+let selectedDate = DATES[0];
+let basket = new Set();         // ausgewählte Slot-IDs
+let selectMode = false;         // aktiviert nach „Weitere Termine auswählen“
+let openTimePanels = new Set(); // merkt geöffnete Zeitfenster (key = `${date}|${time}`)
+let isBooking = false;          // sperrt Doppel-Klick auf „Verbindlich eintragen“
+
+
+
+    function updateFab(){
+      const n = basket.size;
+      fabCount.textContent = String(n);
+      if (n>0) show(fab); else hide(fab);
+    }
+
+    async function fetchRows(){
+      hide(errorEl); show(loading); content.setAttribute('aria-busy','true');
+      try{
+        const res = await authFetch(`${API_BASE}/shifts?from_date=${FROM}&to_date=${TO}`);
+        if (!res.ok) throw new Error('HTTP '+res.status);
+        currentRows = await res.json();
+        render();
+      }catch(err){
+        if (err.message !== 'unauthorized'){
+          errorEl.textContent = "Konnte Schichten nicht laden.";
+          show(errorEl);
+          if (DEBUG) console.error(err);
+        }
+      }finally{
+        hide(loading); content.setAttribute('aria-busy','false');
+      }
+    }
+
+    const group = rows => {
+    // Struktur: byDate[date][time][task] = Slots[]
+    const byDate = {};
+    rows.forEach(r => {
+        (byDate[r.date] ||= {});
+        (byDate[r.date][r.time] ||= {});
+        (byDate[r.date][r.time][r.task] ||= []).push(r);
+    });
+
+    // Innerhalb jeder Task: belegte zuerst, dann ID-aufsteigend
+    Object.keys(byDate).forEach(date => {
+        Object.keys(byDate[date]).forEach(time => {
+        Object.keys(byDate[date][time]).forEach(task => {
+            const arr = byDate[date][time][task];
+            byDate[date][time][task] = arr.sort((a,b) => {
+            const at = (a.status === 'taken') || (a.name && a.name.trim());
+            const bt = (b.status === 'taken') || (b.name && b.name.trim());
+            return at !== bt ? (at ? -1 : 1) : (Number(a.id) - Number(b.id));
+            });
+        });
+        });
+    });
+
+    return byDate;
+    };
+
+    const uniqNames = slots => {
+      const s=new Set(); slots.forEach(r=>{ if (r.name?.trim()) s.add(r.name.trim()); }); return [...s];
+    };
+
+    const daySwitch = $("#day-switch");
+    if (daySwitch){
+      daySwitch.addEventListener('click', (e)=>{
+        const btn = e.target.closest('.btn-day');
+        if (!btn) return;
+        const day = btn.getAttribute('data-day');
+        if (!day || day===selectedDate) return;
+        selectedDate = day;
+        $$(".btn-day", daySwitch).forEach(b=>{
+          const isActive = b.getAttribute('data-day')===selectedDate;
+          b.classList.toggle('is-active', isActive);
+          b.setAttribute('aria-selected', String(isActive));
+        });
+        render();
+      });
+    }
+
+    function seatDot(slot, myNameLC){
+      const taken = slot.status==='taken';
+      const isMine = taken && myNameLC && slot.name && slot.name.trim().toLowerCase() === myNameLC;
+      const initial = (slot.name||'F').trim().charAt(0).toUpperCase();
+      const title = taken ? `Belegt von ${slot.name}` : 'Freier Platz – auswählen';
+      const mineCls = isMine ? 'ring-2 ring-emerald-500 bg-emerald-50' : '';
+      const selectable = slot.status==='open';
+      const picked = basket.has(slot.id);
+
+      return `
+        <button class="seat ${taken?'is-taken':''} ${mineCls} ${picked?'ring-2 ring-emerald-500 bg-emerald-50':''}"
+                ${selectable?'':'disabled'}
+                data-seat="${selectable?1:0}" data-id="${slot.id}"
+                aria-label="${title}" title="${title}">
+          ${taken ? `<span class="font-medium">${initial}</span>`
+                  : `${picked
+                      ? '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6L9 17l-5-5"/></svg>'
+                      : '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>'}`}
+        </button>`;
+    }
+
+
+
+function render() {
+  const filtered = currentRows.filter(r => r.date === selectedDate);
+  const byDate = group(filtered);
+  const dates = Object.keys(byDate).sort();
+
+  const searchVal = (document.getElementById('awp-search-name')?.value || '').trim().toLowerCase();
+  const savedNameLC  = (getSavedName() || '').trim().toLowerCase();
+  const savedEmailLC = getSavedEmail(); // schon lowercase
+
+  // Wenn Suchfeld etwas enthält, priorisieren wir das – Name oder E-Mail
+  const myNameLC  = searchVal && !searchVal.includes('@') ? searchVal : savedNameLC;
+  const myEmailLC = searchVal &&  searchVal.includes('@') ? searchVal : savedEmailLC;
+
+  // Helper: Slot gehört mir, wenn Name ODER E-Mail passt
+  const isMine = (s) => {
+    const n = (s.name || '').trim().toLowerCase();
+    const e = (s.phone_nr || '').trim().toLowerCase();   // serverseitig: E-Mail in phone_nr
+    return (myNameLC && n === myNameLC) || (myEmailLC && e === myEmailLC);
+  };
+
+
+  if (!dates.length) {
+    content.innerHTML = `
+      <div class="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
+        <svg class="w-7 h-7 mx-auto mb-2 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4M16 2v4M3 10h18M5 22h14a2 2 0 0 0 2-2V8H3v12a2 2 0 0 0 2 2z"/></svg>
+        <p class="font-medium">Keine Schichten am gewählten Tag</p>
+      </div>`;
+    updateFab();
+    return;
+  }
+
+  const out = [];
+  dates.forEach(date => {
+    // sortiere Zeitfenster: Start ↑, Dauer ↓
+    const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+    const splitRange = s => { const [a, b] = s.split(/[–-]/); return { start: toMin(a.trim()), end: toMin(b.trim()) }; };
+    const times = Object.keys(byDate[date]).sort((a, b) => {
+      const A = splitRange(a), B = splitRange(b);
+      const startDiff = A.start - B.start;
+      if (startDiff) return startDiff;
+      return (B.end - B.start) - (A.end - A.start);
+    });
+
+    out.push(`
+      <section class="mb-6" aria-label="${fmtDateLong(date)}">
+        <h2 class="text-base sm:text-lg font-semibold mb-2 flex items-center gap-2">
+          <svg class="w-5 h-5 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          ${fmtDateLong(date)}
+        </h2>
+    `);
+
+    times.forEach(time => {
+      const tasks = Object.keys(byDate[date][time]).sort((ta, tb) => {
+        const minA = Math.min(...byDate[date][time][ta].map(s => Number(s.id)));
+        const minB = Math.min(...byDate[date][time][tb].map(s => Number(s.id)));
+        return minA - minB;
+      });
+
+      const timePanelId = `tp-${date}-${time}`.replace(/[^A-Za-z0-9_-]/g, '-');
+      const timeKey = `${date}|${time}`;
+      const isOpen = openTimePanels.has(timeKey);
+
+      // habe ich hier bereits eine fixe Buchung?
+      const myBookedInTime = filtered.some(s =>
+        s.date === date && s.time === time && isMine(s)
+      );
+
+      // NEU: Irgendetwas in diesem Zeitfenster im Basket?
+      const anyPickedInTime = tasks.some(task =>
+        byDate[date][time][task].some(s => basket.has(s.id))
+      );
+
+
+      // wie viele Tasks haben überhaupt noch freie Plätze?
+      const availableCount = tasks.filter(task =>
+        byDate[date][time][task].some(s => !(s.status === 'taken' || (s.name && s.name.trim())))
+      ).length;
+
+      // kompaktes Kopf-Row für das Zeitfenster
+      out.push(`
+        <div class="mb-3 rounded-xl border ${
+          (myBookedInTime || anyPickedInTime)
+            ? 'border-emerald-400'
+            : 'border-slate-200'
+        } bg-white">
+
+
+
+          <button
+            class="w-full flex items-center justify-between gap-3 px-3 py-2 sm:px-4 sm:py-3 text-left time-row"
+
+
+            type="button"
+            aria-expanded="${isOpen ? 'true' : 'false'}"
+            aria-controls="${timePanelId}"
+            data-timekey="${timeKey}">
+            <span class="inline-flex items-center gap-2 text-sm sm:text-base">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path>
+              </svg>
+              <strong>${time}</strong>
+            </span>
+            <span class="text-xs sm:text-sm text-slate-600">
+              ${availableCount > 0 ? `${availableCount} frei` : `Keine freien Plätze`}
+              ${myBookedInTime ? ' · <span class="text-emerald-700 font-medium">Du bist eingetragen</span>' : ''}
+            </span>
+            <svg class="chev w-4 h-4 shrink-0" style="transform:${isOpen ? 'rotate(180deg)' : 'rotate(0deg)'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+
+          <div id="${timePanelId}" class="border-t border-slate-200 ${isOpen ? '' : 'hidden'}">
+            <ul class="divide-y divide-slate-200">
+              ${tasks.map(task => {
+                const slots = byDate[date][time][task];
+                const total = slots.length;
+                const taken = slots.filter(s => (s.status === 'taken') || (s.name && s.name.trim())).length;
+                const open = total - taken;
+
+                const firstOpen = slots.find(s => !(s.status === 'taken' || (s.name && s.name.trim())));
+                const firstOpenId = firstOpen ? firstOpen.id : null;
+
+                const isMineBlock = slots.some(isMine);
+
+                const pickedHere = slots.some(s => basket.has(s.id));
+
+                const names = Array.from(new Set(slots.map(s => s.name && s.name.trim()).filter(Boolean)));
+                const namesTxt = names.length ? names.join(', ') : '–';
+
+                let ctaHtml = '';
+                if (isMineBlock) {
+                  ctaHtml = `<span class="px-2 py-1 text-xs rounded-md border border-emerald-300 bg-emerald-50 text-emerald-700">Eingetragen</span>`;
+                } else if (myBookedInTime) {
+                  ctaHtml = `<span class="px-2 py-1 text-xs rounded-md border border-slate-300 bg-slate-100 text-slate-600">Schon gebucht</span>`;
+                } else if (open > 0) {
+                  const pickedCls = firstOpenId && basket.has(firstOpenId) ? 'ring-2 ring-emerald-500 bg-emerald-50 border-emerald-300 text-emerald-700' : 'btn-primary-lite';
+                  const label = firstOpenId && basket.has(firstOpenId) ? 'Ausgewählt' : 'Eintragen';
+                  ctaHtml = `<button type="button" class="px-3 py-1.5 rounded-md text-sm border ${pickedCls}" data-choose="${firstOpenId || ''}" data-block="${date}|${time}|${task}">${label}</button>`;
+                } else {
+                  ctaHtml = `<span class="px-2 py-1 text-xs rounded-md border border-slate-300 bg-slate-100 text-slate-600">Voll</span>`;
+                }
+
+                return `
+                  <li class="flex items-start sm:items-center gap-3 px-3 py-3 sm:px-4 rounded-lg border ${
+                    pickedHere ? 'border-emerald-400' : 'border-slate-200'
+                  } bg-white">
+
+
+                    <div class="flex-1 min-w-0">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <span class="inline-flex items-center rounded-md px-2 py-1 text-sm border ${ (isMineBlock || pickedHere) ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-700' }">
+                          ${cap(task)}
+                        </span>
+                        <span class="text-xs text-slate-500">${taken}/${total} belegt</span>
+                      </div>
+                      <p class="mt-1 text-sm text-slate-600 truncate">${namesTxt}</p>
+                    </div>
+                    <div class="shrink-0">${ctaHtml}</div>
+                  </li>`;
+              }).join('')}
+            </ul>
+          </div>
+        </div>
+      `);
+    });
+
+    out.push(`</section>`);
+  });
+
+  content.innerHTML = out.join('');
+
+  // Toggle-Handling für Zeitzeilen (Details auf/zu)
+  content.querySelectorAll('.time-row').forEach(btn => {
+    const panelId = btn.getAttribute('aria-controls');
+    const timeKey = btn.getAttribute('data-timekey');
+    btn.addEventListener('click', () => {
+      const panel = document.getElementById(panelId);
+      const expanded = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', String(!expanded));
+      if (panel) panel.classList.toggle('hidden', expanded);
+      const chev = btn.querySelector('.chev');
+      if (chev) chev.style.transform = expanded ? 'rotate(0deg)' : 'rotate(180deg)';
+      if (timeKey) {
+        if (expanded) openTimePanels.delete(timeKey);
+        else openTimePanels.add(timeKey);
+      }
+    });
+  });
+
+  updateFab();
+}
+
+
+    // Auswahl toggeln – mit „nur eine Schicht pro Zeitfenster“-Regel
+    function togglePick(id){
+    const slot = currentRows.find(x => x.id === id);
+    if (!slot) return;
+
+    
+
+// Wenn NEU hinzufügen: ggf. automatisch die andere Auswahl im gleichen Zeitfenster ersetzen
+if (!basket.has(id)) {
+  const myNameLC = getSavedName().trim().toLowerCase();
+  // 1) Hart sperren, wenn in diesem Zeitfenster bereits fix eingetragen
+  const myBooked = bookedInSameTime(slot.date, slot.time);
+
+  if (myBooked) { toast('Dieses Zeitfenster ist bereits von dir gebucht.'); return; }
+
+  // 2) Falls im Basket schon etwas aus gleichem Zeitfenster liegt → ersetzen statt blockieren
+  for (const bid of Array.from(basket)) {
+    const s = currentRows.find(x => x.id === bid);
+    if (s && s.date === slot.date && s.time === slot.time) {
+      basket.delete(bid); // altes im selben Zeitfenster raus
+    }
+  }
+}
+
+
+if (!basket.has(id)) {
+  // 1) Verhindern, wenn im selben Zeitfenster bereits FIX gebucht (Serverdaten)
+  const myName = getSavedName().trim().toLowerCase();
+  const myBooked = bookedInSameTime(slot.date, slot.time);
+
+  if (myBooked) { toast('Dieses Zeitfenster ist bereits von dir gebucht.'); return; }
+
+  // 2) Wenn im Basket schon etwas in diesem Zeitfenster liegt → automatisch wechseln
+  let replaced = false;
+  for (const bid of Array.from(basket)) {
+    const s = currentRows.find(x => x.id === bid);
+    if (s && s.date === slot.date && s.time === slot.time) {
+      basket.delete(bid);
+      replaced = true;
+    }
+  }
+  if (replaced) {
+    // bewusst kein Toast, UI zeigt grünen Ring am neuen Zeitfenster
+  }
+}
+
+    if (!basket.has(id)) {
+        const clash = Array.from(basket).some(bid => {
+        const s = currentRows.find(x => x.id === bid);
+        return s && s.date === slot.date && s.time === slot.time;
+        });
+        if (clash) { toast('Pro Zeitfenster ist nur eine Schicht möglich.'); return; }
+    }
+
+    if (basket.has(id)) basket.delete(id); else basket.add(id);
+    updateFab();
+    render();
+    }
+
+
+
+
+
+
+
+
+    if (bookForm) {
+    bookForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+    });
+    }
+
+
+
+
+
+    // FAB öffnet Bestätigung (oder zuerst Formular, wenn kein Name gespeichert)
+    fab.addEventListener('click', ()=>{
+      const saved = getSavedName();
+      if (!basket.size){ toast("Bitte zuerst mindestens einen Termin wählen.", "error"); return; }
+      if (!saved){
+        $("#modal-slot-info").innerHTML = `<span class="text-sm text-slate-600">Es sind ${basket.size} Termine ausgewählt.</span>`;
+        if ($("#phone")) $("#phone").value = getSavedEmail() || "";   // <-- neu
+        show($("#modal")); $("#modal").setAttribute('aria-hidden','false');
+        show($("#modal-step-form")); hide($("#modal-step-confirm"));
+      }else{
+        $("#name").value = getSavedName();
+        if ($("#phone")) $("#phone").value = getSavedEmail() || "";
+        if ($("#org"))   $("#org").value   = getSavedOrg()   || "FEG-Kloten";
+
+        buildConfirm();
+        show($("#modal")); $("#modal").setAttribute('aria-hidden','false');
+        hide($("#modal-step-form")); show($("#modal-step-confirm"));
+      }
+    });
+
+
+    function buildConfirm(){
+      const ids = Array.from(basket);
+      const items = ids.map(id => currentRows.find(r=>r.id===id)).filter(Boolean)
+        .sort((a,b)=> (a.date+b.time+a.task).localeCompare(b.date+b.time+b.task) || a.id-b.id);
+
+      $("#confirm-list").innerHTML = items.map(r =>
+        `<li class="flex items-center justify-between gap-3 border border-slate-200 rounded-lg px-3 py-2">
+           <span>${fmtDateShort(r.date)} · ${r.time} · <strong>${cap(r.task)}</strong></span>
+           <span class="text-xs text-slate-500">#${r.id}</span>
+         </li>`).join('');
+
+      $("#confirm-name").textContent = `Name: ${$("#name").value.trim() || getSavedName()}`;
+      const phone = $("#phone").value.trim();       // enthält jetzt die E-Mail
+      const org = $("#org").value.trim();
+      $("#confirm-meta").textContent =
+        `${org ? `Organisation: ${org} · ` : ''}${phone ? `E-Mail: ${phone}` : ''}`;
+
+    }
+
+    // Zurück zur Auswahl
+    $("#btn-back").addEventListener('click', ()=>{
+      show($("#modal-step-form")); hide($("#modal-step-confirm"));
+    });
+
+    // Verbindlich eintragen (mehrere POSTs)
+    $("#btn-confirm").addEventListener('click', async ()=>{
+      if (isBooking) return; // Doppel-Klick sperren
+      const btn = $("#btn-confirm");
+
+      const name = $("#name").value.trim() || getSavedName();
+      if (!name){ toast("Bitte Namen eingeben.", "error"); show($("#modal-step-form")); hide($("#modal-step-confirm")); return; }
+      const phone_nr = ($("#phone").value || '').trim(); // enthält E-Mail
+      const organisation = ($("#org").value || '').trim() || null;
+
+      setSavedName(name);
+      if (phone_nr) setSavedEmail(phone_nr);  // <-- E-Mail merken
+
+      // UI sperren + Spinner zeigen
+      isBooking = true;
+      btn.disabled = true;
+      btn.classList.add('opacity-60','pointer-events-none');
+      const prevHtml = btn.innerHTML;
+      btn.setAttribute('data-prev', prevHtml);
+      btn.innerHTML = `
+        <span class="inline-flex items-center gap-2">
+          <svg class="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" class="opacity-30"></circle>
+            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3"></path>
+          </svg>
+          Wird eingetragen…
+        </span>
+      `;
+
+      const ids = Array.from(basket);
+
+      let ok=0, failed=[];
+      for (const id of ids){
+        try{
+          const res = await authFetch(`${API_BASE}/shifts/${id}/book`, {
+            method:'POST',
+            headers:{ 'Content-Type':'application/json' },
+            body: JSON.stringify({ name, phone_nr: phone_nr || null, organisation })
+          });
+          if (!res.ok){
+            const msg = res.status===409 ? "bereits vergeben" :
+                        res.status===404 ? "nicht gefunden" : `Fehler ${res.status}`;
+            failed.push({id, msg});
+          }else{ await res.json(); ok++; }
+        }catch{ failed.push({id, msg:"Netzwerkfehler"}); }
+      }
+
+      // Modal schließen & Feedback
+      $("#modal").setAttribute('aria-hidden','true'); hide($("#modal"));
+      if (ok>0) toast(ok===1 ? "Eingetragen! Viel Freude im Einsatz ✨" : `${ok} Termine erfolgreich eingetragen ✨`);
+      if (failed.length) toast(`${failed.length} Termin(e) konnten nicht gebucht werden.`, "error");
+
+      // Aufräumen
+      basket.clear(); selectMode = false; updateFab();
+      fetchRows();
+
+      // Button-Zustand zurücksetzen (für den nächsten Vorgang)
+      isBooking = false;
+      if (btn) {
+        btn.disabled = false;
+        btn.classList.remove('opacity-60','pointer-events-none');
+        const restore = btn.getAttribute('data-prev');
+        if (restore) btn.innerHTML = restore;
+      }
+
+    });
+
+
+    // Modal schließen per Overlay (außerhalb klicken)
+    $("#modal").addEventListener('click', (e)=>{
+    if (e.target.matches('[data-close]') || e.target.hasAttribute('data-close')) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        cancelModal();
+    }
+    });
+
+    // ESC schließt ebenfalls „hart“
+    document.addEventListener('keydown', (e)=>{
+    if (e.key === 'Escape' && $("#modal").getAttribute('aria-hidden') === 'false') {
+        e.preventDefault();
+        cancelModal();
+    }
+    });
+
+
+    /* ===== Start ===== */
+    if (getToken()){ hide(gate); show(app); fetchRows().catch(()=>{}); }
+  });
+  </script>
+</body> 
+</html>
