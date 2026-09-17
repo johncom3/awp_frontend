@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin – Aktion Weihnachtspäckli Schichtplan</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="stylesheet" href="css/index.css" />
+  <script src="/config.js"></script>
+</head>
+<body class="admin-body">
+  <div id="toast-root" class="toast-root" aria-live="polite"></div>
+
+  <header class="site-header no-print">
+    <div class="shell header-grid">
+      <a class="brand" href="/">
+        <img src="assets/awp.png" alt="Aktion Weihnachtspäckli" />
+        <span>
+          <strong>Admin Schichtplan</strong>
+          <small>Aktion Weihnachtspäckli FEG Kloten</small>
+        </span>
+      </a>
+      <div class="header-logos">
+        <img src="assets/feg.png" alt="FEG Kloten" />
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="admin-header">
+      <div class="admin-title">
+        <div>
+          <h1>Aktueller Schichtplan</h1>
+          <p id="admin-subtitle">31. Oktober 2026 und 7. November 2026</p>
+        </div>
+        <div id="admin-actions" class="admin-actions hidden">
+          <button id="refresh-admin" class="ghost-button" type="button">Aktualisieren</button>
+          <button id="print-admin" class="primary-button" type="button">Als PDF exportieren</button>
+          <button id="logout-admin" class="ghost-button" type="button">Logout</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="admin-login-card" class="admin-login-card">
+      <h2>Admin-Login</h2>
+      <p>Diese Seite ist nicht auf der Startseite sichtbar. Melde dich mit dem Admin-Passwort an, um den vollständigen Plan zu sehen.</p>
+      <form id="admin-login-form" class="admin-login-form" autocomplete="off">
+        <label for="admin-password">Admin-Passwort</label>
+        <input id="admin-password" type="password" autocomplete="current-password" required />
+        <button class="primary-button" type="submit">Admin öffnen</button>
+        <p id="admin-login-error" class="form-error hidden">Admin-Passwort stimmt nicht oder Server ist nicht erreichbar.</p>
+      </form>
+    </section>
+
+    <section id="admin-panel" class="hidden" aria-live="polite">
+      <div id="admin-stats" class="admin-stats"></div>
+      <div id="admin-plan"></div>
+    </section>
+  </main>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const config = window.AWP_CONFIG || {};
+      const API_BASE = (config.API_BASE || "https://awpbackend-production.up.railway.app").replace(/\/$/, "");
+      const DATES = config.DATES || ["2026-10-31", "2026-11-07"];
+      const FROM = DATES[0];
+      const TO = DATES[DATES.length - 1];
+      const ADMIN_TOKEN_KEY = "awp_admin_token";
+
+      const $ = (selector, root = document) => root.querySelector(selector);
+      const show = (el) => el?.classList.remove("hidden");
+      const hide = (el) => el?.classList.add("hidden");
+      const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "\"": "&quot;",
+        "'": "&#039;"
+      }[char]));
+
+      let rows = [];
+
+      const loginCard = $("#admin-login-card");
+      const panel = $("#admin-panel");
+      const actions = $("#admin-actions");
+      const loginForm = $("#admin-login-form");
+      const passwordInput = $("#admin-password");
+      const loginError = $("#admin-login-error");
+      const statsRoot = $("#admin-stats");
+      const planRoot = $("#admin-plan");
+
+      const getToken = () => {
+        try { return localStorage.getItem(ADMIN_TOKEN_KEY) || ""; } catch { return ""; }
+      };
+      const setToken = (token) => {
+        try { localStorage.setItem(ADMIN_TOKEN_KEY, token); } catch {}
+      };
+      const clearToken = () => {
+        try { localStorage.removeItem(ADMIN_TOKEN_KEY); } catch {}
+      };
+
+      const dateLong = (date) => new Date(`${date}T00:00:00`).toLocaleDateString("de-CH", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric"
+      });
+      const toMinutes = (time) => {
+        const [hours, minutes] = time.split(":").map(Number);
+        return hours * 60 + minutes;
+      };
+      const timeStart = (range) => toMinutes(range.split(/[–-]/)[0].trim());
+
+      $("#admin-subtitle").textContent = DATES.map(dateLong).join(" und ");
+
+      function toast(message, type = "success") {
+        const el = document.createElement("div");
+        el.className = `toast ${type === "error" ? "toast-error" : "toast-success"}`;
+        el.textContent = message;
+        $("#toast-root").appendChild(el);
+        setTimeout(() => {
+          el.style.opacity = "0";
+          setTimeout(() => el.remove(), 220);
+        }, 2400);
+      }
+
+      function isTaken(row) {
+        return row.status === "taken" || Boolean(row.name?.trim());
+      }
+
+      async function adminFetch(path, options = {}) {
+        const token = getToken();
+        const response = await fetch(`${API_BASE}${path}`, {
+          ...options,
+          headers: {
+            ...(options.headers || {}),
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          }
+        });
+        if (response.status === 401) {
+          clearToken();
+          hide(panel);
+          hide(actions);
+          show(loginCard);
+          throw new Error("unauthorized");
+        }
+        return response;
+      }
+
+      async function login(password) {
+        const body = new URLSearchParams();
+        body.set("password", password);
+        const response = await fetch(`${API_BASE}/admin/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: body.toString()
+        });
+        if (!response.ok) return false;
+        const data = await response.json();
+        if (!data.token) return false;
+        setToken(data.token);
+        return true;
+      }
+
+      async function loadPlan() {
+        const response = await adminFetch(`/admin/shifts?from_date=${encodeURIComponent(FROM)}&to_date=${encodeURIComponent(TO)}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        rows = await response.json();
+        hide(loginCard);
+        show(panel);
+        show(actions);
+        render();
+      }
+
+      function groupRows(items) {
+        const grouped = {};
+        for (const row of items) {
+          grouped[row.date] ||= {};
+          grouped[row.date][row.time] ||= {};
+          grouped[row.date][row.time][row.task] ||= [];
+          grouped[row.date][row.time][row.task].push(row);
+        }
+        return grouped;
+      }
+
+      function renderStats() {
+        const total = rows.length;
+        const taken = rows.filter(isTaken).length;
+        const open = total - taken;
+        const people = new Set(rows.filter(isTaken).map((row) => (row.name || "").trim()).filter(Boolean)).size;
+        statsRoot.innerHTML = `
+          <article class="admin-stat"><strong>${total}</strong><span>Plätze total</span></article>
+          <article class="admin-stat"><strong>${taken}</strong><span>belegt</span></article>
+          <article class="admin-stat"><strong>${open}</strong><span>frei</span></article>
+          <article class="admin-stat"><strong>${people}</strong><span>Personen</span></article>
+        `;
+      }
+
+      function render() {
+        renderStats();
+        const grouped = groupRows(rows);
+        const dates = Object.keys(grouped).sort();
+        if (!dates.length) {
+          planRoot.innerHTML = `<div class="empty-state"><strong>Keine Schichten gefunden</strong><span>Bitte Backend-Seeding prüfen.</span></div>`;
+          return;
+        }
+
+        planRoot.innerHTML = dates.map((date) => {
+          const times = Object.keys(grouped[date]).sort((a, b) => timeStart(a) - timeStart(b));
+          const dayRows = rows.filter((row) => row.date === date);
+          const taken = dayRows.filter(isTaken).length;
+          return `
+            <section class="admin-day">
+              <div class="admin-day-header">
+                <h2>${escapeHtml(dateLong(date))}</h2>
+                <strong>${taken}/${dayRows.length} belegt</strong>
+              </div>
+              ${times.map((time) => renderTime(date, time, grouped[date][time])).join("")}
+            </section>
+          `;
+        }).join("");
+      }
+
+      function renderTime(date, time, tasks) {
+        const taskNames = Object.keys(tasks).sort((a, b) => Number(tasks[a][0].id) - Number(tasks[b][0].id));
+        return `
+          <div class="admin-time">
+            <h3>${escapeHtml(time)}</h3>
+            <div class="admin-table-wrap">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Aufgabe</th>
+                    <th>Status</th>
+                    <th>Personen</th>
+                    <th>Kontakt / Organisation</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${taskNames.map((task) => renderTask(task, tasks[task])).join("")}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }
+
+      function renderTask(task, slots) {
+        const filled = slots.filter(isTaken);
+        const open = slots.length - filled.length;
+        const people = filled.length
+          ? filled.map((row) => `<div class="admin-filled">${escapeHtml(row.name || "Ohne Name")}</div>`).join("")
+          : `<span class="admin-open">Noch niemand eingetragen</span>`;
+        const contacts = filled.length
+          ? filled.map((row) => {
+              const email = row.phone_nr ? escapeHtml(row.phone_nr) : "–";
+              const org = row.organisation ? escapeHtml(row.organisation) : "–";
+              return `<div>${email} · ${org}</div>`;
+            }).join("")
+          : `<span class="admin-open">${open} frei</span>`;
+        return `
+          <tr>
+            <td>${escapeHtml(task)}</td>
+            <td>${filled.length}/${slots.length} belegt${open ? ` · ${open} frei` : ""}</td>
+            <td>${people}</td>
+            <td>${contacts}</td>
+          </tr>
+        `;
+      }
+
+      loginForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        hide(loginError);
+        const ok = await login(passwordInput.value.trim()).catch(() => false);
+        if (!ok) {
+          show(loginError);
+          passwordInput.focus();
+          return;
+        }
+        await loadPlan().catch(() => {
+          toast("Admin-Plan konnte nicht geladen werden.", "error");
+        });
+      });
+
+      $("#refresh-admin").addEventListener("click", () => {
+        loadPlan().then(() => toast("Plan aktualisiert.")).catch(() => toast("Aktualisieren fehlgeschlagen.", "error"));
+      });
+
+      $("#print-admin").addEventListener("click", () => window.print());
+
+      $("#logout-admin").addEventListener("click", () => {
+        clearToken();
+        hide(panel);
+        hide(actions);
+        show(loginCard);
+        passwordInput.value = "";
+        passwordInput.focus();
+      });
+
+      if (getToken()) {
+        loadPlan().catch(() => {
+          clearToken();
+          show(loginCard);
+          passwordInput.focus();
+        });
+      } else {
+        passwordInput.focus();
+      }
+    });
+  </script>
+</body>
+</html>
